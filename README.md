@@ -1,6 +1,5 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/ivnvxd/ivnvxd/master/img/h_page_analyzer.png" alt="logo" width="270" height="auto" />
 <h1>Page Analyzer</h1>
 
 <p>
