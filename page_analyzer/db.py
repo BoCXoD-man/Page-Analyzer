@@ -76,6 +76,28 @@ def get_urls_by_name(name: str) -> dict:
     return urls
 
 
+def get_checks_by_id(id_: int) -> dict:
+    """
+    Query the database for all URL checks.
+    Tables: url_checks
+    :param id_: URL id.
+    :return: Dict containing checks info: id, status code, h1, title,
+    description, check date.
+    """
+
+    conn = connect(DATABASE_URL)
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        q_select = '''SELECT *
+                    FROM url_checks
+                    WHERE url_id=(%s)
+                    ORDER BY id DESC'''
+        cur.execute(q_select, [id_])
+        checks = cur.fetchall()
+    conn.close()
+
+    return checks
+
+
 def add_site(site: dict) -> None:
     """
     Insert into database new URL.
@@ -96,22 +118,32 @@ def add_site(site: dict) -> None:
     conn.close()
 
 
-def get_checks_by_id(id_: int) -> dict:
+def add_check(check: dict) -> None:
     """
-    Query the database for all URL checks.
+    Insert into database new check data.
     Tables: url_checks
-    :param id_: URL id.
-    :return: Dict containing checks info: id, status code, h1, title,
-    description, check date.
+    :param check: Dict containing url check data: URL id, check status code, h1,
+    title, description, check date
     """
 
     conn = connect(DATABASE_URL)
-    with conn.cursor(cursor_factory=RealDictCursor) as cur:
-        q_select = '''SELECT *
-                    FROM url_checks
-                    WHERE url_id=(%s)
-                    ORDER BY id DESC'''
-        cur.execute(q_select, [id_])
+    with conn.cursor() as cur:
+        q_insert = '''INSERT
+                    INTO url_checks(
+                        url_id,
+                        status_code,
+                        h1,
+                        title,
+                        description,
+                        created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s)'''
+        cur.execute(q_insert, (
+            check['url_id'],
+            check['status_code'],
+            check['h1'],
+            check['title'],
+            check['description'],
+            check['checked_at']
+        ))
+        conn.commit()
     conn.close()
-
-    return

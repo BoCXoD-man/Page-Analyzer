@@ -9,27 +9,30 @@ from flask import (Flask,
 import os
 from dotenv import load_dotenv
 from datetime import datetime
+import requests
 
-from page_analyzer.checks import (validate_url
+from page_analyzer.checks import (validate_url,
+                                  get_url_data
                                   )
 from page_analyzer.db import (get_all_urls,
                               get_urls_by_id,
                               get_urls_by_name,
                               get_checks_by_id,
+                              add_check,
                               add_site)
 
 
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = 'TTo4emy 9I Takou TyTTou'
+app.secret_key = 'why_not?'
 
 
 @app.errorhandler(404)
 def page_not_found(error):
     """
     Render 404 error page if the requested page is missing.
-    :return: Render 404 error page.
+    :return: Render 404.html.
     """
 
     return render_template(
@@ -40,8 +43,8 @@ def page_not_found(error):
 @app.route('/')
 def index():
     """
-    Render index page.
-    :return: Render index page.
+    Render index.html.
+    :return: Render index.html.
     """
 
     return render_template(
@@ -146,6 +149,36 @@ def url_show(id_):
         return render_template(
             '404.html'
         ), 404
+
+
+@app.post('/urls/<int:id_>/checks')
+def url_check(id_):
+    """
+    Check requested URL. Add data to db or raise error.
+    :param id_: URL id.
+    :return: Redirect to one URL show page adding check data to db or returning
+    error if an error occured during check.
+    """
+
+    url = get_urls_by_id(id_)['name']
+
+    try:
+        check = get_url_data(url)
+
+        check['url_id'] = id_
+        check['checked_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        add_check(check)
+
+        flash('Страница успешно проверена', 'alert-success')
+
+    except requests.RequestException:
+        flash('Произошла ошибка при проверке', 'alert-danger')
+
+    return redirect(url_for(
+        'url_show',
+        id_=id_
+    ))
 
 
 if __name__ == '__main__':
