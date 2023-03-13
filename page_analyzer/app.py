@@ -6,7 +6,6 @@ from flask import (Flask,
                    flash,
                    get_flashed_messages
                    )
-import os
 from dotenv import load_dotenv
 from datetime import datetime
 import requests
