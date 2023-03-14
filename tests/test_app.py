@@ -28,10 +28,6 @@ def test_404(client):
     assert '<h1>Страница не найдена</h1>' in html
 
 
-def test_add_url_wrong_data(client):
-    response = client.post('/urls', data={"url": "wrong_data"}, follow_redirects=True)
-    assert response.status_code == 422
-
 
 @pytest.fixture
 def test_existing_url_redirect(app, mocker):
@@ -55,3 +51,6 @@ def test_invalid_id_error(app):
     assert response.status_code == 404  # Not Found
 
 
+def test_add_url_wrong_data(client):
+    response = client.post('/urls', data={"url": "wrong_data"}, follow_redirects=True)
+    assert response.status_code == 422
