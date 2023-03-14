@@ -9,6 +9,7 @@ from flask import (Flask,
 from dotenv import load_dotenv
 from datetime import datetime
 import requests
+import os
 
 from page_analyzer.checks import (validate_url,
                                   get_url_data
@@ -24,7 +25,7 @@ from page_analyzer.db import (get_all_urls,
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "Secret_Key"
+app.secret_key = os.getenv("SECRET_KEY")
 
 
 @app.errorhandler(404)
