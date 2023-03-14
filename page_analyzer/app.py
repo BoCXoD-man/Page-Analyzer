@@ -7,7 +7,6 @@ from flask import (Flask,
                    get_flashed_messages
                    )
 from dotenv import load_dotenv
-import os
 from datetime import datetime
 import requests
 
@@ -25,7 +24,7 @@ from page_analyzer.db import (get_all_urls,
 load_dotenv()
 
 app = Flask(__name__)
-SECRET_KEY = os.getenv('SECRET_KEY')
+app.secret_key = 'why_not?'
 
 
 @app.errorhandler(404)
