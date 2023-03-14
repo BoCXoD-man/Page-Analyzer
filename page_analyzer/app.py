@@ -24,7 +24,7 @@ from page_analyzer.db import (get_all_urls,
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = 'seckret_kkkey'
+app.secret_key = "Secret_Key"
 
 
 @app.errorhandler(404)
