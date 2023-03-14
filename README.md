@@ -1,25 +1,5 @@
 <!DOCTYPE html>
 <html>
-<style>
-    body {
-        background-image: url('demo/water3.jpg');
-        background-size: cover;
-        font-style: italic;
-    }
-    .content {
-        background-color: rgba(); 
-        padding: 20px;
-        width: 50%;
-        margin: 100px auto;
-        font-family: Arial, sans-serif;
-        font-size: 20px;
-        line-height: 1.5;
-        text-align: justify;
-    }
-    h1 {
-        text-align: center;
-    }
-</style>
   <body class="content">
     <h1 style alright='center'>Page Analyzer</h1>
     <h2>### Description</h2>
