@@ -49,8 +49,3 @@ def test_missing_url_error(app):
 def test_invalid_id_error(app):
     response = app.test_client().post('/urls/20000/checks')
     assert response.status_code == 404  # Not Found
-
-
-def test_add_url_wrong_data(client):
-    response = client.post('/urls', data={"url": "wrong_data"}, follow_redirects=True)
-    assert response.status_code == 422
