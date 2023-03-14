@@ -26,7 +26,7 @@ jobs:
       - name: Run code coverage
         uses: paambaati/codeclimate-action@v3.2.0
         env:
-          CC_TEST_REPORTER_ID: 22adf738931e80f89186b018e18fbf8e778516bcb1c1811f8afc0d953fc89c53
+          CC_TEST_REPORTER_ID: ${{ secrets.SECRET_WHY_NOT }}
         with:
           coverageCommand: make test-coverage
           debug: true
