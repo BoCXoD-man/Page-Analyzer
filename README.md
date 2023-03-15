@@ -10,7 +10,7 @@
     <a href="https://github.com/BoCXoD-man/python-project-83/actions/workflows/run_tests.yml"><img src="https://github.com/BoCXoD-man/python-project-83/actions/workflows/run_tests.yml/badge.svg" /></a>
     <a href="https://github.com/BoCXoD-man/python-project-83/actions/workflows/lint_check.yml"><img src="https://github.com/BoCXoD-man/python-project-83/actions/workflows/lint_check.yml/badge.svg" /></a>
     <p></p>
-    <a href="https://python-project-83-production-372e.up.railway.app" target="_blank">You can take look at deployed app here.</a>
+    <a href="https://python-project-83-production-19c9.up.railway.app/" target="_blank">You can take look at deployed app here.</a>
     <table>
       <thead>
         <tr>
