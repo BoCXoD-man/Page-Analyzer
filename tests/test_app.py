@@ -33,7 +33,7 @@ def test_existing_url_redirect(app, mocker):
     mocker.patch('app.get_urls_by_name', return_value={'id': 1})
     response = app.test_client().post('/urls', data={'url': 'https://www.example.com'})
     assert response.status_code == 302  # Redirect
-    assert response.location == f'http://localhost/url/1'
+    assert response.location == 'http://localhost/url/1'
     assert 'Страница уже существует' in response.data
 
 
