@@ -2,12 +2,6 @@ import pytest
 from requests import RequestException
 from page_analyzer.checks import validate_url, get_url_data
 
-from page_analyzer.db import get_all_urls, get_urls_by_id
-import os
-from dotenv import load_dotenv
-from psycopg2 import connect
-from psycopg2.extras import RealDictCursor
-
 
 @pytest.fixture()
 def site():
@@ -44,58 +38,3 @@ def test_check(check):
 
     with pytest.raises(RequestException):
         get_url_data(check['wrong'])
-
-
-
-
-@pytest.fixture
-def test_get_urls_by_id(mocker):
-    expected_url_data = {
-        'id': 1,
-        'name': 'example.com',
-        'created_at': '2022-03-12 10:30:00'
-    }
-    id_ = 1
-    expected_query = f"SELECT * FROM urls WHERE id=({id_})"
-    mocker.patch.object(connect, 'cursor')
-    mock_cursor = connect.return_value.cursor.return_value
-    mock_cursor.fetchone.return_value = expected_url_data
-
-    result = get_urls_by_id(id_)
-
-    connect.assert_called_once_with(DATABASE_URL)
-    mock_cursor.execute.assert_called_once_with(expected_query, [id_])
-    assert result == expected_url_data
-
-
-
-@pytest.fixture
-def test_get_all_urls(mocker):
-    expected_all_urls_data = [
-        {
-            'id': 3,
-            'name': 'google.com',
-            'last_check': '2022-03-11 10:30:00',
-            'status_code': 200
-        },
-        {
-            'id': 2,
-            'name': 'yahoo.com',
-            'last_check': '2022-03-10 10:30:00',
-            'status_code': 404
-        },
-        {
-            'id': 1,
-            'name': 'example.com',
-            'last_check': '2022-03-09 10:30:00',
-            'status_code': 200
-        }
-    ]
-    mocker.patch.object(connect, 'cursor')
-    mock_cursor = connect.return_value.cursor.return_value
-    mock_cursor.fetchall.return_value = expected_all_urls_data
-
-    result = get_all_urls()
-
-    connect.assert_called_once_with(DATABASE_URL)
-    assert result == expected_all_urls_data
