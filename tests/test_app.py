@@ -28,7 +28,6 @@ def test_404(client):
     assert '<h1>Страница не найдена</h1>' in html
 
 
-
 @pytest.fixture
 def test_existing_url_redirect(app, mocker):
     mocker.patch('app.get_urls_by_name', return_value={'id': 1})
