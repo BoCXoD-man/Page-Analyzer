@@ -1,10 +1,25 @@
-
+from psycopg2.extras import RealDictCursor
 import validators
 from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
+from psycopg2 import connect
+from dotenv import load_dotenv
+import os
 
-from page_analyzer.db import get_urls_by_name
+load_dotenv()
+
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+
+def get_connect_db():
+    """
+    CLI is a utility.
+    :return: the connection to the database.
+    """
+
+    conn = connect(DATABASE_URL)
+    return conn
 
 
 def validate_url(url):
@@ -67,3 +82,75 @@ def get_url_data(url: str) -> dict:
         if description_tag else ''
 
     return check
+
+
+def add_check(check: dict) -> None:
+    """
+    Insert into database new check data.
+    Tables: url_checks
+    :param check: Dict containing url check data: URL id, check status code, h1,
+    title, description, check date
+    """
+
+    conn = get_connect_db()
+    with conn.cursor() as cur:
+        q_insert = '''INSERT
+        INTO url_checks(
+            url_id,
+            status_code,
+            h1,
+            title,
+            description,
+            created_at)
+        VALUES (%s, %s, %s, %s, %s, %s)'''
+        cur.execute(q_insert, (
+            check['url_id'],
+            check['status_code'],
+            check['h1'],
+            check['title'],
+            check['description'],
+            check['checked_at']
+        ))
+        conn.commit()
+    conn.close()
+
+
+def get_checks_by_id(id_url: int) -> dict:
+    """
+    Query the database for all URL checks.
+    Tables: url_checks
+    :param id_url: URL id.
+    :return: Dict containing checks info: id, status code, h1, title,
+    description, check date.
+    """
+
+    conn = get_connect_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        q_select = '''SELECT *
+        FROM url_checks
+        WHERE url_id=(%s)
+        ORDER BY id DESC'''
+        cur.execute(q_select, [id_url])
+        checks = cur.fetchall()
+    conn.close()
+
+    return checks
+
+
+def get_urls_by_name(name: str) -> dict:
+    """
+    Query the database for one URL data based on its name.
+    Tables: urls
+    :param name: URL name.
+    :return: Dict containing one url data: id, name, creation date.
+    """
+
+    conn = get_connect_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        q_select = '''SELECT *
+        FROM urls WHERE name=(%s)'''
+        cur.execute(q_select, [name])
+        urls = cur.fetchone()
+    conn.close()
+
+    return urls
