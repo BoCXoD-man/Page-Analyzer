@@ -134,7 +134,7 @@ def get_all_urls(conn) -> dict:
     SELECT
         url_id,
         status_code,
-        created_at AS last_check_date
+        created_at AS last_check
     FROM url_checks
     ORDER BY id DESC
     ) AS checks ON urls.id = checks.url_id
