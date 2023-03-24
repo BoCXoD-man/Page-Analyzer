@@ -124,6 +124,14 @@ def urls_post():
             url=url,
             messages=messages
         ), 422
+    elif error == 'invalid':
+        flash('Некорректный URL', 'alert-danger')
+        messages = get_flashed_messages(with_categories=True)
+        return render_template(
+            'index.html',
+            url=url,
+            messages=messages
+        ), 422
     else:
         site = {
             'url': url,
