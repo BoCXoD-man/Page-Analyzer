@@ -141,7 +141,7 @@ def urls_post():
         add_site(site, conn)
         close(conn)
 
-        conn = get_connection
+        conn = get_connection()
         url_id_ = get_urls_by_name(url, conn)['id']
         close(conn)
 
