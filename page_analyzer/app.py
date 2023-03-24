@@ -10,33 +10,23 @@ from dotenv import load_dotenv
 from datetime import datetime
 import requests
 import os
-from psycopg2 import connect
-from psycopg2.extras import RealDictCursor
 
-from page_analyzer.checks import (validate_url,
-                                  get_url_data,
-                                  get_checks_by_id,
-                                  add_check,
-                                  get_urls_by_name
-                                  )
+from page_analyzer.html import get_url_data
+from page_analyzer.url_valid import validate_url
+from page_analyzer.db import (get_connection,
+                              close,
+                              get_urls_by_id,
+                              get_urls_by_name,
+                              get_all_urls,
+                              add_site,
+                              add_check,
+                              get_checks_by_id)
 
 
 load_dotenv()
 
-DATABASE_URL = os.getenv('DATABASE_URL')
-
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
-
-
-def get_connect_db():
-    """
-    CLI is a utility.
-    :return: the connection to the database.
-    """
-
-    conn = connect(DATABASE_URL)
-    return conn
 
 
 @app.errorhandler(404)
@@ -70,7 +60,9 @@ def urls_get():
     :return: Render all URLs page.
     """
 
-    urls = get_all_urls()
+    conn = get_connection()
+    urls = get_all_urls(conn)
+    close(conn)
 
     messages = get_flashed_messages(with_categories=True)
     return render_template(
@@ -89,58 +81,85 @@ def urls_post():
     Render index page with flash error if any.
     """
 
+    # 1 step of validation
     url = request.form.get('url')
     check = validate_url(url)
 
+    # 2 step of validation
+    conn = get_connection()
+    found = get_urls_by_name(check['url'], conn)
+    close(conn)
+
+    if found:
+        check['error'] = 'exists'
+
+    # Total validation:
     url = check['url']
     error = check['error']
 
     if error == 'exists':
-        id_url = get_urls_by_name(url)['id']
+        conn = get_connection()
+        url_id_ = get_urls_by_name(url, conn)['id']
+        close(conn)
         flash('Страница уже существует', 'alert-info')
         return redirect(url_for(
             'url_show',
-            id_url=id_url
+            url_id_=url_id_
         ))
-
-    elif error:
+    elif error == 'zero':
         flash('Некорректный URL', 'alert-danger')
-        if error == 'zero':
-            flash('URL обязателен', 'alert-danger')
-        elif error == 'length':
-            flash('URL превышает 255 символов', 'alert-danger')
+        flash('URL обязателен', 'alert-danger')
         messages = get_flashed_messages(with_categories=True)
         return render_template(
             'index.html',
             url=url,
             messages=messages
         ), 422
-
+    elif error == 'length':
+        flash('Некорректный URL', 'alert-danger')
+        flash('URL превышает 255 символов', 'alert-danger')
+        messages = get_flashed_messages(with_categories=True)
+        return render_template(
+            'index.html',
+            url=url,
+            messages=messages
+        ), 422
     else:
         site = {
             'url': url,
             'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
-        add_site(site)
-        id_url = get_urls_by_name(url)['id']
+        conn = get_connection()
+        add_site(site, conn)
+        close(conn)
+
+        conn = get_connection
+        url_id_ = get_urls_by_name(url, conn)['id']
+        close(conn)
+
         flash('Страница успешно добавлена', 'alert-success')
         return redirect(url_for(
             'url_show',
-            id_url=id_url
+            url_id_=url_id_
         ))
 
 
-@app.route('/urls/<int:id_url>')
-def url_show(id_url):
+@app.route('/urls/<int:url_id_>')
+def url_show(url_id_):
     """
     Render one URL page containing its parsed check data.
-    :param id_: URL id.
+    :param url_id_: URL id.
     :return: Render page or raise 404 error.
     """
 
     try:
-        url = get_urls_by_id(id_url)
-        checks = get_checks_by_id(id_url)
+        conn = get_connection()
+        url = get_urls_by_id(url_id_, conn)
+        close(conn)
+
+        conn = get_connection()
+        checks = get_checks_by_id(url_id_, conn)
+        close(conn)
 
         messages = get_flashed_messages(with_categories=True)
         return render_template(
@@ -155,24 +174,28 @@ def url_show(id_url):
         ), 404
 
 
-@app.post('/urls/<int:id_url>/checks')
-def url_check(id_url):
+@app.post('/urls/<int:url_id_>/checks')
+def url_check(url_id_):
     """
     Check requested URL. Add data to db or raise error.
-    :param id_url: URL id.
+    :param url_id_: URL id.
     :return: Redirect to one URL show page adding check data to db or returning
     error if an error occured during check.
     """
 
-    url = get_urls_by_id(id_url)['name']
+    conn = get_connection()
+    url = get_urls_by_id(url_id_, conn)['name']
+    close(conn)
 
     try:
         check = get_url_data(url)
 
-        check['url_id'] = id_url
+        check['url_id'] = url_id_
         check['checked_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        add_check(check)
+        conn = get_connection()
+        add_check(check, conn)
+        close(conn)
 
         flash('Страница успешно проверена', 'alert-success')
 
@@ -181,69 +204,8 @@ def url_check(id_url):
 
     return redirect(url_for(
         'url_show',
-        id_url=id_url
+        url_id_=url_id_
     ))
-
-
-def add_site(site: dict) -> None:
-    """
-    Insert into database new URL.
-    Tables: urls
-    :param site: Dict containing URL and its creation date.
-    """
-
-    conn = get_connect_db()
-    with conn.cursor() as cur:
-        q_insert = '''INSERT
-        INTO urls (name, created_at)
-        VALUES (%s, %s)'''
-        cur.execute(q_insert, (
-            site['url'],
-            site['created_at']
-        ))
-        conn.commit()
-    conn.close()
-
-
-def get_all_urls() -> dict:
-    """
-    Query the database for all added URLs. Return only the last check info.
-    Tables: urls, url_checks
-    :return: Dict of all urls, its id's, last check dates and status codes.
-    """
-
-    conn = get_connect_db()
-    conn.autocommit = True
-    curs = conn.cursor(cursor_factory=RealDictCursor)
-    curs.execute(
-        "SELECT urls.id, urls.name, url_checks.created_at, "
-        "url_checks.status_code FROM urls LEFT JOIN "
-        "(SELECT * FROM url_checks WHERE id IN "
-        "(SELECT MAX(id) as id FROM url_checks GROUP BY url_id)) "
-        "AS url_checks ON urls.id = url_checks.url_id "
-        "ORDER BY urls.id DESC")
-    data_urls = curs.fetchall()
-    conn.close()
-    return data_urls
-
-
-def get_urls_by_id(id_url: int) -> dict:
-    """
-    Query the database for one URL data based on its id.
-    Tables: urls
-    :param id_url: URL id.
-    :return: Dict containing one url data: id, name, creation date.
-    """
-
-    conn = get_connect_db()
-    with conn.cursor(cursor_factory=RealDictCursor) as cur:
-        q_select = '''SELECT *
-        FROM urls WHERE id=(%s)'''
-        cur.execute(q_select, [id_url])
-        urls = cur.fetchone()
-    conn.close()
-
-    return urls
 
 
 if __name__ == '__main__':

@@ -1,7 +1,8 @@
 import pytest
 from requests import RequestException
-from page_analyzer.checks import validate_url, get_url_data
 
+from page_analyzer.html import get_url_data
+from page_analyzer.url_valid import validate_url
 
 @pytest.fixture()
 def site():
@@ -23,6 +24,7 @@ def check():
     return checks
 
 
+@pytest.fixture()
 def test_validation_errors(site):
     assert validate_url(site['zero']['url']) == {'url': site['zero']['url'], 'error': 'zero'}
     assert validate_url(site['invalid']['url']) == {'url': site['invalid']['url'], 'error': 'invalid'}
@@ -32,6 +34,7 @@ def test_validation_errors(site):
     # assert validate_url(site['valid']['url']) == {'url': valid, 'error': ''}
 
 
+@pytest.fixture()
 def test_check(check):
     right = get_url_data(check['right'])
     assert right == {'description': 'The official home of the Python Programming Language', 'h1': '', 'status_code': 200, 'title': 'Welcome to Python.org'}
