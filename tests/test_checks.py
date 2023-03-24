@@ -4,6 +4,7 @@ from requests import RequestException
 from page_analyzer.html import get_url_data
 from page_analyzer.url_valid import validate_url
 
+
 @pytest.fixture()
 def site():
     urls = {}
